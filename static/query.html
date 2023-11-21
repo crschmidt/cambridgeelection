@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SQLite3 Database Query</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.2.1/dist/sql-asm.js"></script>
+</head>
+<body>
+    <h1>Vote Count</h1>
+    <div id="results"></div>
+    <script>
+
+document.addEventListener("DOMContentLoaded", function() {
+    // Load the db from a file
+    fetch("votes.db").then(response => response.arrayBuffer()).then(data => {
+        return initSqlJs().then(SQL => {
+            const db = new SQL.Database(new Uint8Array(data));
+            return db;
+        });
+    }).then(db => {
+        // Prepare and execute your SQL query
+        const stmt = db.prepare("SELECT precinct, ward, COUNT(*) as count FROM votes GROUP BY precinct, ward");
+        const results = [];
+        while(stmt.step()) {
+            const row = stmt.getAsObject();
+            results.push(row);
+        }
+        stmt.free();
+        updateResults(results);
+    });
+});
+
+function updateResults(data) {
+    const resultsElement = document.getElementById("results");
+    resultsElement.innerHTML = '<ul>' + data.map(row => `<li>${row.precinct}, ${row.ward}: ${row.count}</li>`).join('') + '</ul>';
+}
+</script>
+</body>
+</html>
